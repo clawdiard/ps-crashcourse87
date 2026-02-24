@@ -92,11 +92,48 @@ footer{text-align:center;padding:3rem 2rem;color:var(--muted);font-size:0.85rem;
 @keyframes wave-bar{0%,100%{height:4px}50%{height:14px}}
 .narration-banner .now-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* Responsive */
+/* Replay Mode */
+.replay-section{max-width:900px;margin:0 auto;padding:4rem 2rem;text-align:center}
+.replay-btn{display:inline-flex;align-items:center;gap:0.6rem;padding:1rem 2.5rem;background:transparent;border:2px solid var(--accent);color:var(--accent);font-family:'Courier New',monospace;font-size:1.1rem;letter-spacing:0.08em;cursor:pointer;transition:all 0.3s;border-radius:4px}
+.replay-btn:hover{background:var(--accent);color:var(--bg);transform:scale(1.04)}
+.replay-btn:disabled{opacity:0.4;cursor:default;transform:none}
+
+.replay-overlay{position:fixed;inset:0;z-index:500;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+.replay-overlay.active{display:flex}
+
+.replay-header{display:flex;align-items:center;justify-content:space-between;padding:0.8rem 1.5rem;border-bottom:1px solid var(--border);font-family:'Courier New',monospace;flex-shrink:0}
+.replay-clock{font-size:1.4rem;color:var(--accent);letter-spacing:0.1em}
+.replay-dow{font-size:1.2rem}
+.replay-dow .val{color:var(--accent);font-weight:700}
+.replay-dow .pct{color:var(--accent);margin-left:0.5rem;font-size:0.9rem}
+.replay-close{background:none;border:1px solid var(--border);color:var(--muted);font-size:0.85rem;padding:0.4rem 1rem;cursor:pointer;border-radius:3px;font-family:'Courier New',monospace}
+.replay-close:hover{border-color:var(--accent);color:var(--accent)}
+
+.replay-body{flex:1;display:flex;overflow:hidden}
+.replay-chart-area{flex:1;position:relative;min-width:0;padding:1rem}
+.replay-chart-area svg{width:100%;height:100%}
+.replay-events{width:320px;flex-shrink:0;border-left:1px solid var(--border);overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.8rem}
+.replay-event{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem;opacity:0;transform:translateX(30px);transition:all 0.5s ease}
+.replay-event.show{opacity:1;transform:translateX(0)}
+.replay-event .re-time{color:var(--accent);font-family:'Courier New',monospace;font-size:0.8rem;margin-bottom:0.3rem}
+.replay-event .re-title{font-weight:700;font-size:0.95rem;margin-bottom:0.3rem}
+.replay-event .re-body{color:var(--muted);font-size:0.82rem;line-height:1.5}
+.replay-event.flash{border-color:var(--accent);box-shadow:0 0 15px rgba(255,68,68,0.3)}
+
+.replay-footer{display:flex;align-items:center;gap:1rem;padding:0.8rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0}
+.replay-progress{flex:1;height:4px;background:var(--surface);border-radius:2px;overflow:hidden;cursor:pointer}
+.replay-progress-bar{height:100%;background:var(--accent);width:0%;transition:width 0.3s linear}
+.replay-speed{background:none;border:1px solid var(--border);color:var(--muted);padding:0.3rem 0.8rem;cursor:pointer;border-radius:3px;font-family:'Courier New',monospace;font-size:0.8rem}
+.replay-speed:hover{border-color:var(--accent);color:var(--accent)}
+.replay-pause{background:none;border:1px solid var(--accent);color:var(--accent);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;font-size:1rem}
+.replay-pause:hover{background:var(--accent);color:var(--bg)}
+
 @media(max-width:768px){
   .timeline{padding-left:1.5rem}
   .timeline-event::before{left:-2.05rem}
   .narration-fab{bottom:1rem;right:1rem}
+  .replay-events{width:100%;border-left:none;border-top:1px solid var(--border);max-height:200px}
+  .replay-body{flex-direction:column}
 }
 </style>
 </head>
@@ -277,6 +314,31 @@ footer{text-align:center;padding:3rem 2rem;color:var(--muted);font-size:0.85rem;
 <div class="narration-fab" id="narrationFab">
   <span class="narration-label">Listen — period news broadcast narration</span>
   <button class="narration-btn" id="narrationBtn" aria-label="Toggle audio narration">🔊</button>
+</div>
+
+<div class="replay-section">
+  <h2 style="font-size:clamp(1.6rem,4vw,2.4rem);font-weight:400;margin-bottom:1rem">⏪ <span style="color:var(--accent)">Relive It</span></h2>
+  <p style="color:var(--muted);max-width:600px;margin:0 auto 2rem;font-size:1rem">Watch the entire trading day compressed into 5 minutes. The chart animates in real-time and news events appear exactly when they happened.</p>
+  <button class="replay-btn" id="replayStartBtn">▶ RELIVE BLACK MONDAY</button>
+</div>
+
+<div class="replay-overlay" id="replayOverlay">
+  <div class="replay-header">
+    <div class="replay-clock" id="replayClock">9:30 AM</div>
+    <div class="replay-dow">DJIA <span class="val" id="replayDow">2,164</span><span class="pct" id="replayPct">0.0%</span></div>
+    <button class="replay-close" id="replayCloseBtn">✕ EXIT</button>
+  </div>
+  <div class="replay-body">
+    <div class="replay-chart-area">
+      <svg id="replayChartSvg" viewBox="0 0 800 400" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="replay-events" id="replayEvents"></div>
+  </div>
+  <div class="replay-footer">
+    <button class="replay-pause" id="replayPauseBtn">⏸</button>
+    <div class="replay-progress" id="replayProgress"><div class="replay-progress-bar" id="replayProgressBar"></div></div>
+    <button class="replay-speed" id="replaySpeedBtn">1×</button>
+  </div>
 </div>
 
 <footer>
@@ -518,6 +580,229 @@ setInterval(() => { if (window.speechSynthesis.speaking) window.speechSynthesis.
 
 let narrationCtrl;
 document.addEventListener('DOMContentLoaded', () => { narrationCtrl = new NarrationController(); });
+
+// ── Replay Mode: Relive It ──
+(function(){
+  // Minute-by-minute DJIA data (approximate, 9:30 AM to 4:00 PM = 390 minutes)
+  // We'll interpolate from the intradayData already defined above
+  const openVal=2246; // Friday close
+  const replayPoints=[];
+  // Expand intradayData to per-minute (390 data points for 9:30-4:00)
+  const rawTimes=intradayData.map(d=>{
+    const [h,m]=d.t.split(':').map(Number);
+    return (h*60+m)-570; // minutes since 9:30
+  });
+  const rawVals=intradayData.map(d=>d.v);
+  for(let min=0;min<=390;min++){
+    let i=0;
+    for(let j=0;j<rawTimes.length-1;j++){if(rawTimes[j+1]<=min)i=j+1;else break;}
+    if(i>=rawTimes.length-1){replayPoints.push(rawVals[rawVals.length-1]);continue;}
+    const t1=rawTimes[i],t2=rawTimes[i+1],v1=rawVals[i],v2=rawVals[i+1];
+    const frac=(min-t1)/(t2-t1);
+    // Add some noise for realism
+    const noise=(Math.random()-0.5)*8;
+    replayPoints.push(Math.round(v1+(v2-v1)*frac+noise));
+  }
+
+  // Events with minute offsets from 9:30
+  const replayEventsData=[
+    {min:0,title:'Markets Open',body:'Massive sell orders flood the NYSE. Many stocks can\'t find opening prices. S&P futures already limit-down.'},
+    {min:15,title:'Panic on the Floor',body:'$500M in sell orders hit the S&P futures pit. Traders are shouting but nobody is buying.'},
+    {min:30,title:'Portfolio Insurance Activates',body:'Automated selling programs begin executing. The feedback loop starts: lower prices → more selling → lower prices.'},
+    {min:60,title:'Down 100 Points',body:'The Dow has fallen 100 points in the first hour. NYSE specialists are overwhelmed.'},
+    {min:90,title:'Down 200 Points',body:'"There are no buyers" — the ticker is running 75 minutes behind. Nobody knows true prices.'},
+    {min:120,title:'SEC Monitoring Situation',body:'SEC officials are in emergency session. Phone lines to the White House are active.'},
+    {min:150,title:'Brief Rally Attempt',body:'Bargain hunters push the Dow up ~100 points. For 20 minutes, hope flickers.'},
+    {min:180,title:'Rally Crushed',body:'Portfolio insurance programs resume selling with even greater force. The brief hope is destroyed.'},
+    {min:210,title:'CME Considers Halt',body:'The Chicago Mercantile Exchange debates halting futures trading. NYSE discusses closing entirely.'},
+    {min:240,title:'SEC Chairman Calls Reagan',body:'David Ruder mentions possibly closing exchanges. The comment leaks, intensifying panic.'},
+    {min:270,title:'Down 400 Points',body:'Selling is now completely indiscriminate. Blue chips, small caps — everything is being dumped.'},
+    {min:300,title:'Cascade Failure',body:'Some stocks haven\'t traded all day. The options market is in chaos. Margin calls going unanswered.'},
+    {min:330,title:'Final Hour Collapse',body:'The last hour of trading is the worst. Sellers have given up trying to get good prices — they just want out.'},
+    {min:390,title:'Closing Bell',body:'DJIA closes at 1,738.74. Down 508 points — 22.6%. The worst single day in history. The ticker won\'t finish until 5:17 PM.'}
+  ];
+
+  const TOTAL_DURATION=5*60*1000; // 5 minutes in ms
+  let speed=1, paused=false, running=false, startTime=0, elapsed=0, pausedAt=0, rafId=null;
+
+  const overlay=document.getElementById('replayOverlay');
+  const clockEl=document.getElementById('replayClock');
+  const dowEl=document.getElementById('replayDow');
+  const pctEl=document.getElementById('replayPct');
+  const eventsEl=document.getElementById('replayEvents');
+  const progressBar=document.getElementById('replayProgressBar');
+  const chartSvg2=document.getElementById('replayChartSvg');
+  const pauseBtn=document.getElementById('replayPauseBtn');
+  const speedBtn=document.getElementById('replaySpeedBtn');
+  const speeds=[1,2,4];
+  let speedIdx=0;
+
+  function minToTime(min){
+    const totalMin=min+570;
+    let h=Math.floor(totalMin/60),m=totalMin%60;
+    const ampm=h>=12?'PM':'AM';
+    if(h>12)h-=12;if(h===0)h=12;
+    return `${h}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+
+  function drawReplayChart(upToMin){
+    chartSvg2.innerHTML='';
+    const W=800,H=400,pad={t:30,r:20,b:40,l:65};
+    const minV=1680,maxV=2250;
+    const xS=i=>pad.l+(i/390)*(W-pad.l-pad.r);
+    const yS=v=>pad.t+(1-(v-minV)/(maxV-minV))*(H-pad.t-pad.b);
+
+    // Defs
+    const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+    const gr=document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+    gr.setAttribute('id','rGrad');gr.setAttribute('x1','0');gr.setAttribute('y1','0');gr.setAttribute('x2','0');gr.setAttribute('y2','1');
+    const st1=document.createElementNS('http://www.w3.org/2000/svg','stop');st1.setAttribute('offset','0%');st1.setAttribute('stop-color','#ff4444');st1.setAttribute('stop-opacity','0.25');
+    const st2=document.createElementNS('http://www.w3.org/2000/svg','stop');st2.setAttribute('offset','100%');st2.setAttribute('stop-color','#ff4444');st2.setAttribute('stop-opacity','0.02');
+    gr.appendChild(st1);gr.appendChild(st2);defs.appendChild(gr);chartSvg2.appendChild(defs);
+
+    // Grid
+    for(let v=1800;v<=2200;v+=100){
+      const y=yS(v);
+      const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+      Object.entries({x1:pad.l,x2:W-pad.r,y1:y,y2:y,stroke:'#1e1e2e','stroke-width':1}).forEach(([k,val])=>ln.setAttribute(k,val));
+      chartSvg2.appendChild(ln);
+      const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
+      tx.setAttribute('x',pad.l-8);tx.setAttribute('y',y+4);tx.setAttribute('fill','#8888a0');tx.setAttribute('font-size','11');tx.setAttribute('text-anchor','end');tx.setAttribute('font-family','Courier New');
+      tx.textContent=v.toLocaleString();chartSvg2.appendChild(tx);
+    }
+
+    // Open line
+    const oY=yS(openVal);
+    const oLn=document.createElementNS('http://www.w3.org/2000/svg','line');
+    Object.entries({x1:pad.l,x2:W-pad.r,y1:oY,y2:oY,stroke:'#ffaa00','stroke-width':1,'stroke-dasharray':'4,4',opacity:0.4}).forEach(([k,v])=>oLn.setAttribute(k,v));
+    chartSvg2.appendChild(oLn);
+    const oTx=document.createElementNS('http://www.w3.org/2000/svg','text');
+    oTx.setAttribute('x',W-pad.r+4);oTx.setAttribute('y',oY+4);oTx.setAttribute('fill','#ffaa00');oTx.setAttribute('font-size','10');oTx.setAttribute('font-family','Courier New');
+    oTx.textContent='Fri Close';chartSvg2.appendChild(oTx);
+
+    // Time labels
+    [0,60,120,180,240,300,390].forEach(m=>{
+      const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
+      tx.setAttribute('x',xS(m));tx.setAttribute('y',H-pad.b+18);tx.setAttribute('fill','#8888a0');tx.setAttribute('font-size','10');tx.setAttribute('text-anchor','middle');tx.setAttribute('font-family','Courier New');
+      tx.textContent=minToTime(m);chartSvg2.appendChild(tx);
+    });
+
+    // Draw line + area up to current minute
+    const maxI=Math.min(Math.floor(upToMin),390);
+    if(maxI<1)return;
+    let ld=`M${xS(0)},${yS(replayPoints[0])}`;
+    let ad=`M${xS(0)},${yS(replayPoints[0])}`;
+    for(let i=1;i<=maxI;i++){
+      ld+=` L${xS(i)},${yS(replayPoints[i])}`;
+      ad+=` L${xS(i)},${yS(replayPoints[i])}`;
+    }
+    ad+=` L${xS(maxI)},${H-pad.b} L${xS(0)},${H-pad.b} Z`;
+
+    const area=document.createElementNS('http://www.w3.org/2000/svg','path');
+    area.setAttribute('d',ad);area.setAttribute('fill','url(#rGrad)');chartSvg2.appendChild(area);
+    const line=document.createElementNS('http://www.w3.org/2000/svg','path');
+    line.setAttribute('d',ld);line.setAttribute('fill','none');line.setAttribute('stroke','#ff4444');line.setAttribute('stroke-width','2.5');chartSvg2.appendChild(line);
+
+    // Current price dot
+    const cx=xS(maxI),cy=yS(replayPoints[maxI]);
+    const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx',cx);dot.setAttribute('cy',cy);dot.setAttribute('r','5');dot.setAttribute('fill','#ff4444');
+    chartSvg2.appendChild(dot);
+    // Glow
+    const glow=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    glow.setAttribute('cx',cx);glow.setAttribute('cy',cy);glow.setAttribute('r','10');glow.setAttribute('fill','none');glow.setAttribute('stroke','#ff4444');glow.setAttribute('stroke-width','1.5');glow.setAttribute('opacity','0.4');
+    chartSvg2.appendChild(glow);
+  }
+
+  let shownEvents=new Set();
+
+  function showEventsUpTo(min){
+    replayEventsData.forEach((ev,i)=>{
+      if(ev.min<=min && !shownEvents.has(i)){
+        shownEvents.add(i);
+        const div=document.createElement('div');
+        div.className='replay-event';
+        div.innerHTML=`<div class="re-time">${minToTime(ev.min)}</div><div class="re-title">${ev.title}</div><div class="re-body">${ev.body}</div>`;
+        eventsEl.appendChild(div);
+        requestAnimationFrame(()=>{
+          div.classList.add('show','flash');
+          setTimeout(()=>div.classList.remove('flash'),2000);
+          eventsEl.scrollTop=eventsEl.scrollHeight;
+        });
+      }
+    });
+  }
+
+  function tick(){
+    if(!running)return;
+    if(paused){rafId=requestAnimationFrame(tick);return;}
+    const now=performance.now();
+    elapsed+=(now-startTime)*speed;
+    startTime=now;
+    const progress=Math.min(elapsed/TOTAL_DURATION,1);
+    const currentMin=progress*390;
+
+    clockEl.textContent=minToTime(Math.min(Math.floor(currentMin),390));
+    const idx=Math.min(Math.floor(currentMin),390);
+    const val=replayPoints[idx];
+    dowEl.textContent=val.toLocaleString();
+    const pct=((val-openVal)/openVal*100).toFixed(1);
+    pctEl.textContent=`${pct}%`;
+    progressBar.style.width=`${progress*100}%`;
+
+    drawReplayChart(currentMin);
+    showEventsUpTo(currentMin);
+
+    if(progress>=1){
+      running=false;
+      pauseBtn.textContent='↺';
+      return;
+    }
+    rafId=requestAnimationFrame(tick);
+  }
+
+  function startReplay(){
+    overlay.classList.add('active');
+    document.body.style.overflow='hidden';
+    eventsEl.innerHTML='';
+    shownEvents.clear();
+    elapsed=0;paused=false;running=true;speedIdx=0;speed=1;
+    speedBtn.textContent='1×';
+    pauseBtn.textContent='⏸';
+    startTime=performance.now();
+    rafId=requestAnimationFrame(tick);
+  }
+
+  function stopReplay(){
+    running=false;paused=false;
+    if(rafId)cancelAnimationFrame(rafId);
+    overlay.classList.remove('active');
+    document.body.style.overflow='';
+  }
+
+  document.getElementById('replayStartBtn').addEventListener('click',startReplay);
+  document.getElementById('replayCloseBtn').addEventListener('click',stopReplay);
+
+  pauseBtn.addEventListener('click',()=>{
+    if(!running){startReplay();return;}
+    paused=!paused;
+    if(!paused)startTime=performance.now();
+    pauseBtn.textContent=paused?'▶':'⏸';
+  });
+
+  speedBtn.addEventListener('click',()=>{
+    speedIdx=(speedIdx+1)%speeds.length;
+    speed=speeds[speedIdx];
+    speedBtn.textContent=speed+'×';
+  });
+
+  // Keyboard: Escape to close, Space to pause
+  document.addEventListener('keydown',e=>{
+    if(!overlay.classList.contains('active'))return;
+    if(e.key==='Escape')stopReplay();
+    if(e.key===' '){e.preventDefault();pauseBtn.click();}
+  });
+})();
 
 // Scroll reveal for timeline
 const observer=new IntersectionObserver(entries=>{
