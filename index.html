@@ -128,6 +128,23 @@ footer{text-align:center;padding:3rem 2rem;color:var(--muted);font-size:0.85rem;
 .replay-pause{background:none;border:1px solid var(--accent);color:var(--accent);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;font-size:1rem}
 .replay-pause:hover{background:var(--accent);color:var(--bg)}
 
+/* Compare section */
+.compare-controls{display:flex;flex-wrap:wrap;gap:0.8rem;margin-bottom:1.5rem}
+.compare-toggle{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:0.85rem;font-family:'Courier New',monospace;color:var(--muted);transition:all 0.3s;user-select:none}
+.compare-toggle.active{color:var(--text);border-color:#555}
+.compare-toggle:not(.active){opacity:0.4}
+.compare-toggle .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.compare-chart{position:relative;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin:1.5rem 0;aspect-ratio:2/1}
+.compare-chart svg{width:100%;height:100%}
+.compare-tooltip{position:absolute;background:rgba(10,10,15,0.95);border:1px solid var(--border);padding:0.6rem 0.9rem;font-family:'Courier New',monospace;font-size:0.78rem;pointer-events:none;display:none;border-radius:3px;z-index:10;line-height:1.6}
+.compare-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin:1.5rem 0}
+.compare-stat-card{background:var(--surface);border:1px solid var(--border);padding:1.2rem;border-radius:4px;transition:all 0.3s}
+.compare-stat-card:not(.visible){opacity:0.3}
+.compare-stat-card.visible{opacity:1}
+.cs-title{font-size:0.85rem;font-weight:700;margin-bottom:0.3rem}
+.cs-drop{font-family:'Courier New',monospace;font-size:1.1rem;color:var(--accent);margin-bottom:0.4rem}
+.cs-note{color:var(--muted);font-size:0.8rem;line-height:1.5}
+
 @media(max-width:768px){
   .timeline{padding-left:1.5rem}
   .timeline-event::before{left:-2.05rem}
@@ -306,6 +323,46 @@ footer{text-align:center;padding:3rem 2rem;color:var(--muted);font-size:0.85rem;
   <p>The 1987 crash remains the single worst day in market history by percentage. Not 1929. Not 2008. Not 2020. One Monday in October, when the machines and the humans panicked together.</p>
 </div>
 
+<div class="section" id="compareSection">
+  <h2><span>Crash</span> Comparisons</h2>
+  <p style="color:var(--muted);margin-bottom:1.5rem">How does Black Monday stack up against the other great crashes? This overlay normalizes each crash to Day 0 = 100%, showing the percentage decline over the following trading days.</p>
+  
+  <div class="compare-controls">
+    <label class="compare-toggle active" data-crash="1987"><span class="dot" style="background:#ff4444"></span> 1987 Black Monday</label>
+    <label class="compare-toggle active" data-crash="1929"><span class="dot" style="background:#ffaa00"></span> 1929 Great Crash</label>
+    <label class="compare-toggle active" data-crash="2008"><span class="dot" style="background:#4488ff"></span> 2008 GFC</label>
+    <label class="compare-toggle active" data-crash="2020"><span class="dot" style="background:#00cc88"></span> 2020 COVID</label>
+  </div>
+
+  <div class="compare-chart" id="compareChart">
+    <svg id="compareSvg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="compare-tooltip" id="compareTooltip"></div>
+  </div>
+
+  <div class="compare-stats" id="compareStats">
+    <div class="compare-stat-card" data-crash="1987" style="border-left:3px solid #ff4444">
+      <div class="cs-title">Black Monday 1987</div>
+      <div class="cs-drop">-22.6% in 1 day</div>
+      <div class="cs-note">Fastest crash in history. Full recovery: 2 years.</div>
+    </div>
+    <div class="compare-stat-card" data-crash="1929" style="border-left:3px solid #ffaa00">
+      <div class="cs-title">Great Crash 1929</div>
+      <div class="cs-drop">-48% over 2 months</div>
+      <div class="cs-note">Led to the Great Depression. Full recovery: 25 years.</div>
+    </div>
+    <div class="compare-stat-card" data-crash="2008" style="border-left:3px solid #4488ff">
+      <div class="cs-title">Financial Crisis 2008</div>
+      <div class="cs-drop">-54% over 17 months</div>
+      <div class="cs-note">Lehman collapse triggered global crisis. Recovery: 5.5 years.</div>
+    </div>
+    <div class="compare-stat-card" data-crash="2020" style="border-left:3px solid #00cc88">
+      <div class="cs-title">COVID Crash 2020</div>
+      <div class="cs-drop">-34% over 23 days</div>
+      <div class="cs-note">Fastest bear market ever. Recovery: just 5 months.</div>
+    </div>
+  </div>
+</div>
+
 <div class="narration-banner" id="narrationBanner">
   <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="now-text" id="narrationNowText">Narrating…</div>
@@ -467,7 +524,8 @@ const narrationScripts = [
   { section: 'buildup', text: "In the summer of nineteen eighty-seven, Wall Street was riding high. The Dow had climbed forty-four percent since January. A new financial innovation called portfolio insurance promised to protect investors from any downturn. Over sixty billion dollars in assets were hedged with this strategy. But as one trader later remarked: when everyone has the same insurance, no one is actually insured." },
   { section: 'timeline', text: "The timeline of Black Monday reads like a horror story. Before New York even opened, Hong Kong had crashed eleven percent. London was down ten. When the opening bell rang at nine-thirty, many stocks simply could not open — there were no buyers at any price. By ten o'clock, automated portfolio insurance programs began dumping futures contracts, creating a vicious cycle: lower prices triggered more selling, which drove prices even lower. By the afternoon, the New York Stock Exchange was discussing whether to shut down entirely. At four o'clock, when the closing bell finally rang, the Dow stood at seventeen thirty-eight — down five hundred and eight points. The ticker tape didn't finish printing until five-seventeen." },
   { section: 'aftermath', text: "The aftermath reshaped modern finance. Circuit breakers were born — automatic trading halts at seven, thirteen, and twenty percent declines. Portfolio insurance was abandoned almost overnight. And Federal Reserve Chairman Alan Greenspan established what would become known as the Fed Put: the expectation that the central bank would step in during market crises. His single sentence the next morning — the Fed stands ready — broke the panic and saved the system." },
-  { section: 'lessons', text: "Black Monday remains the worst single day in stock market history by percentage. Not nineteen twenty-nine. Not two thousand eight. Not twenty-twenty. It taught Wall Street a lesson that keeps being forgotten and relearned: markets are not machines. They are ecosystems of human fear and automated amplification. And when the exits are crowded, not everyone gets out. This has been a special report." }
+  { section: 'lessons', text: "Black Monday remains the worst single day in stock market history by percentage. Not nineteen twenty-nine. Not two thousand eight. Not twenty-twenty. It taught Wall Street a lesson that keeps being forgotten and relearned: markets are not machines. They are ecosystems of human fear and automated amplification. And when the exits are crowded, not everyone gets out. This has been a special report." },
+  { section: 'compare', text: "How does Black Monday compare to the other great crashes? In nineteen twenty-nine, the market lost forty-eight percent over two months and took twenty-five years to recover. In two thousand eight, the financial crisis dragged the market down fifty-four percent over seventeen months. And the COVID crash of twenty-twenty saw the fastest bear market in history — thirty-four percent in just twenty-three days — but also the fastest recovery, just five months. Black Monday remains unique: the most concentrated destruction in the shortest time. One day. Twenty-two point six percent. Gone." }
 ];
 
 // Map sections to DOM elements
@@ -479,7 +537,8 @@ function getNarrationSections() {
     { el: sections[1], script: narrationScripts[2] },
     { el: sections[2], script: narrationScripts[3] },
     { el: sections[3], script: narrationScripts[4] },
-    { el: sections[4], script: narrationScripts[5] }
+    { el: sections[4], script: narrationScripts[5] },
+    { el: document.getElementById('compareSection'), script: narrationScripts[6] }
   ];
 }
 
@@ -554,7 +613,7 @@ class NarrationController {
     utter.rate = 0.92;
     utter.pitch = 0.85;
     // Show current narration text in banner
-    const label = ['OPENING','THE NUMBERS','THE BUILDUP','BLACK MONDAY','THE AFTERMATH','LESSONS'][idx] || '';
+    const label = ['OPENING','THE NUMBERS','THE BUILDUP','BLACK MONDAY','THE AFTERMATH','LESSONS','CRASH COMPARISONS'][idx] || '';
     this.bannerText.textContent = `▶ ${label}: ${script.text.substring(0, 80)}…`;
     utter.onend = () => { if (this.active && idx === this.currentIdx) { /* wait for scroll to trigger next */ } };
     this.synth.speak(utter);
@@ -809,6 +868,136 @@ const observer=new IntersectionObserver(entries=>{
   entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
 },{threshold:0.2});
 document.querySelectorAll('.timeline-event').forEach(el=>observer.observe(el));
+
+// ── Crash Comparison Chart ──
+(function(){
+  // Normalized data: trading days from peak, value as % of peak (100 = peak)
+  // ~60 trading days shown for each crash
+  const crashes = {
+    '1987': {
+      color:'#ff4444', label:'1987',
+      // Black Monday: sharp one-day drop then quick recovery
+      data:[100,100,99,98,97,96,95,77.4,80,82,81,83,82,84,83,85,84,86,85,87,86,85,87,86,88,87,89,88,87,89,88,90,89,88,90,89,91,90,89,91,90,92,91,90,92,91,93,92,91,93,92,94,93,92,93,92,94,93,94,93,95]
+    },
+    '1929': {
+      color:'#ffaa00', label:'1929',
+      // 1929: two sharp drops with brief rally between, then prolonged decline
+      data:[100,98,96,94,88,87,86,85,83,80,78,76,75,74,72,70,69,72,74,73,72,70,68,66,65,64,63,62,61,60,59,58,57,58,59,58,57,56,55,54,53,52,53,54,53,52,51,52,53,54,53,52,51,52,53,54,53,52,51,52,52]
+    },
+    '2008': {
+      color:'#4488ff', label:'2008',
+      // 2008 GFC: Lehman collapse, gradual grinding decline
+      data:[100,98,96,95,94,93,91,89,88,90,89,87,86,85,84,83,82,81,80,79,78,77,76,75,74,73,72,74,73,72,71,70,69,68,67,66,67,68,67,66,65,64,63,62,63,64,63,62,61,60,59,58,57,56,55,54,55,56,55,54,53]
+    },
+    '2020': {
+      color:'#00cc88', label:'2020',
+      // COVID: very fast 34% drop then rapid V-shaped recovery
+      data:[100,97,94,91,88,86,84,82,80,78,76,74,72,70,69,68,67,66,66,67,68,70,72,74,73,72,74,76,75,77,78,80,79,81,82,83,82,84,85,86,85,87,88,89,88,90,89,91,90,92,91,93,92,94,93,95,94,96,95,97,98]
+    }
+  };
+
+  const active = {1987:true, 1929:true, 2008:true, 2020:true};
+  const svgEl = document.getElementById('compareSvg');
+  const tooltipEl = document.getElementById('compareTooltip');
+  const chartBox = document.getElementById('compareChart');
+  const W=800, H=400, pad={t:30,r:80,b:40,l:60};
+  const days=60;
+
+  function xS(d){ return pad.l + (d/(days-1))*(W-pad.l-pad.r); }
+  function yS(v){ return pad.t + (1-(v-40)/(110-40))*(H-pad.t-pad.b); }
+
+  function drawCompare(){
+    svgEl.innerHTML='';
+    // Defs for each gradient
+    const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+    svgEl.appendChild(defs);
+
+    // Grid
+    for(let v=50;v<=100;v+=10){
+      const y=yS(v);
+      const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+      Object.entries({x1:pad.l,x2:W-pad.r,y1:y,y2:y,stroke:'#1e1e2e','stroke-width':1}).forEach(([k,val])=>ln.setAttribute(k,val));
+      svgEl.appendChild(ln);
+      const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
+      tx.setAttribute('x',pad.l-8);tx.setAttribute('y',y+4);tx.setAttribute('fill','#8888a0');tx.setAttribute('font-size','10');tx.setAttribute('text-anchor','end');tx.setAttribute('font-family','Courier New');
+      tx.textContent=v+'%';svgEl.appendChild(tx);
+    }
+    // X-axis labels
+    [0,10,20,30,40,50,60].forEach(d=>{
+      if(d>=days)return;
+      const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
+      tx.setAttribute('x',xS(d));tx.setAttribute('y',H-pad.b+18);tx.setAttribute('fill','#8888a0');tx.setAttribute('font-size','10');tx.setAttribute('text-anchor','middle');tx.setAttribute('font-family','Courier New');
+      tx.textContent=d===0?'Peak':'Day '+d;svgEl.appendChild(tx);
+    });
+
+    // 100% reference line
+    const refLn=document.createElementNS('http://www.w3.org/2000/svg','line');
+    Object.entries({x1:pad.l,x2:W-pad.r,y1:yS(100),y2:yS(100),stroke:'#555','stroke-width':1,'stroke-dasharray':'4,4'}).forEach(([k,v])=>refLn.setAttribute(k,v));
+    svgEl.appendChild(refLn);
+
+    // Draw each active crash
+    Object.entries(crashes).forEach(([key, c])=>{
+      if(!active[key])return;
+      let d='';
+      c.data.forEach((v,i)=>{
+        d+=(i===0?'M':'L')+xS(i)+','+yS(v);
+      });
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d',d);path.setAttribute('fill','none');path.setAttribute('stroke',c.color);path.setAttribute('stroke-width','2.5');path.setAttribute('opacity','0.9');
+      svgEl.appendChild(path);
+
+      // End label
+      const lastV=c.data[c.data.length-1];
+      const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
+      tx.setAttribute('x',xS(days-1)+6);tx.setAttribute('y',yS(lastV)+4);tx.setAttribute('fill',c.color);tx.setAttribute('font-size','10');tx.setAttribute('font-family','Courier New');tx.setAttribute('font-weight','bold');
+      tx.textContent=`'${key.slice(2)} ${lastV.toFixed(0)}%`;svgEl.appendChild(tx);
+    });
+
+    // Hover overlay
+    const hoverRect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    hoverRect.setAttribute('x',pad.l);hoverRect.setAttribute('y',pad.t);hoverRect.setAttribute('width',W-pad.l-pad.r);hoverRect.setAttribute('height',H-pad.t-pad.b);hoverRect.setAttribute('fill','transparent');hoverRect.setAttribute('cursor','crosshair');
+    hoverRect.addEventListener('mousemove', e=>{
+      const rect=chartBox.getBoundingClientRect();
+      const svgX=(e.clientX-rect.left)/rect.width*W;
+      const dayIdx=Math.round((svgX-pad.l)/(W-pad.l-pad.r)*(days-1));
+      if(dayIdx<0||dayIdx>=days){tooltipEl.style.display='none';return;}
+      let html=`<strong>Day ${dayIdx}</strong><br>`;
+      Object.entries(crashes).forEach(([key,c])=>{
+        if(!active[key])return;
+        const v=c.data[dayIdx];
+        html+=`<span style="color:${c.color}">● ${c.label}: ${v.toFixed(1)}%</span><br>`;
+      });
+      tooltipEl.innerHTML=html;
+      tooltipEl.style.display='block';
+      tooltipEl.style.left=(e.clientX-rect.left+15)+'px';
+      tooltipEl.style.top=(e.clientY-rect.top-20)+'px';
+    });
+    hoverRect.addEventListener('mouseleave',()=>{tooltipEl.style.display='none';});
+    svgEl.appendChild(hoverRect);
+
+    // Update stat cards visibility
+    document.querySelectorAll('.compare-stat-card').forEach(card=>{
+      const key=card.dataset.crash;
+      if(active[key])card.classList.add('visible'); else card.classList.remove('visible');
+    });
+  }
+
+  // Toggle buttons
+  document.querySelectorAll('.compare-toggle').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const key=btn.dataset.crash;
+      active[key]=!active[key];
+      btn.classList.toggle('active');
+      drawCompare();
+    });
+  });
+
+  // Initial draw with intersection observer
+  const cmpObs=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){drawCompare();cmpObs.disconnect();}
+  },{threshold:0.1});
+  cmpObs.observe(document.getElementById('compareSection'));
+})();
 </script>
 </body>
 </html>
