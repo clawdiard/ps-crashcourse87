@@ -72,10 +72,31 @@ footer{text-align:center;padding:3rem 2rem;color:var(--muted);font-size:0.85rem;
 .dow-chart svg{width:100%;height:100%}
 .dow-chart .tooltip{position:absolute;background:rgba(10,10,15,0.95);border:1px solid var(--accent);padding:0.5rem 0.8rem;font-family:'Courier New',monospace;font-size:0.8rem;pointer-events:none;display:none;border-radius:3px;z-index:10}
 
+/* Audio narration controls */
+.narration-fab{position:fixed;bottom:2rem;right:2rem;z-index:200;display:flex;align-items:center;gap:0.5rem}
+.narration-btn{width:52px;height:52px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--accent);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.narration-btn:hover{background:var(--accent);color:var(--bg);transform:scale(1.08)}
+.narration-btn.active{background:var(--accent);color:var(--bg);animation:pulse-btn 2s infinite}
+@keyframes pulse-btn{0%,100%{box-shadow:0 4px 20px rgba(255,68,68,0.3)}50%{box-shadow:0 4px 30px rgba(255,68,68,0.6)}}
+.narration-label{background:var(--surface);border:1px solid var(--border);padding:0.4rem 0.8rem;border-radius:4px;font-size:0.75rem;color:var(--muted);font-family:'Courier New',monospace;white-space:nowrap;opacity:0;transition:opacity 0.3s}
+.narration-fab:hover .narration-label{opacity:1}
+.narration-banner{position:fixed;top:0;left:0;right:0;z-index:300;background:rgba(255,68,68,0.12);border-bottom:1px solid var(--accent);padding:0.5rem 1rem;display:flex;align-items:center;gap:0.8rem;font-family:'Courier New',monospace;font-size:0.8rem;color:var(--accent);transform:translateY(-100%);transition:transform 0.3s}
+.narration-banner.visible{transform:translateY(0)}
+.narration-banner .wave{display:flex;gap:2px;align-items:center;height:16px}
+.narration-banner .wave span{width:3px;background:var(--accent);border-radius:1px;animation:wave-bar 0.8s ease-in-out infinite}
+.narration-banner .wave span:nth-child(1){height:4px;animation-delay:0s}
+.narration-banner .wave span:nth-child(2){height:10px;animation-delay:0.1s}
+.narration-banner .wave span:nth-child(3){height:6px;animation-delay:0.2s}
+.narration-banner .wave span:nth-child(4){height:14px;animation-delay:0.3s}
+.narration-banner .wave span:nth-child(5){height:8px;animation-delay:0.15s}
+@keyframes wave-bar{0%,100%{height:4px}50%{height:14px}}
+.narration-banner .now-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* Responsive */
 @media(max-width:768px){
   .timeline{padding-left:1.5rem}
   .timeline-event::before{left:-2.05rem}
+  .narration-fab{bottom:1rem;right:1rem}
 }
 </style>
 </head>
@@ -248,6 +269,16 @@ footer{text-align:center;padding:3rem 2rem;color:var(--muted);font-size:0.85rem;
   <p>The 1987 crash remains the single worst day in market history by percentage. Not 1929. Not 2008. Not 2020. One Monday in October, when the machines and the humans panicked together.</p>
 </div>
 
+<div class="narration-banner" id="narrationBanner">
+  <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="now-text" id="narrationNowText">Narrating…</div>
+</div>
+
+<div class="narration-fab" id="narrationFab">
+  <span class="narration-label">Listen — period news broadcast narration</span>
+  <button class="narration-btn" id="narrationBtn" aria-label="Toggle audio narration">🔊</button>
+</div>
+
 <footer>
   <p>CrashCourse '87 — An interactive history of Black Monday</p>
   <p style="margin-top:0.5rem">Data sourced from SEC reports, NYSE archives, and Federal Reserve records</p>
@@ -366,6 +397,127 @@ intradayData.forEach((d,i)=>{
   circle.addEventListener('mouseleave',()=>{tooltip.style.display='none'});
   svg.appendChild(circle);
 });
+
+// ── Audio Narration System ──
+const narrationScripts = [
+  { section: 'hero', text: "October nineteenth, nineteen eighty-seven. This is a special report. The stock market has suffered its worst single-day decline in history. The Dow Jones Industrial Average has plummeted five hundred and eight points — a staggering twenty-two point six percent loss. We take you now through the events of this extraordinary day." },
+  { section: 'numbers', text: "The numbers are almost incomprehensible. Five hundred billion dollars in market value — gone in six and a half hours. Six hundred and four million shares changed hands on the New York Stock Exchange alone, shattering every volume record. To put this in perspective: the nineteen twenty-nine crash that launched the Great Depression saw a decline of just twelve point eight percent. Black Monday was nearly twice as devastating." },
+  { section: 'buildup', text: "In the summer of nineteen eighty-seven, Wall Street was riding high. The Dow had climbed forty-four percent since January. A new financial innovation called portfolio insurance promised to protect investors from any downturn. Over sixty billion dollars in assets were hedged with this strategy. But as one trader later remarked: when everyone has the same insurance, no one is actually insured." },
+  { section: 'timeline', text: "The timeline of Black Monday reads like a horror story. Before New York even opened, Hong Kong had crashed eleven percent. London was down ten. When the opening bell rang at nine-thirty, many stocks simply could not open — there were no buyers at any price. By ten o'clock, automated portfolio insurance programs began dumping futures contracts, creating a vicious cycle: lower prices triggered more selling, which drove prices even lower. By the afternoon, the New York Stock Exchange was discussing whether to shut down entirely. At four o'clock, when the closing bell finally rang, the Dow stood at seventeen thirty-eight — down five hundred and eight points. The ticker tape didn't finish printing until five-seventeen." },
+  { section: 'aftermath', text: "The aftermath reshaped modern finance. Circuit breakers were born — automatic trading halts at seven, thirteen, and twenty percent declines. Portfolio insurance was abandoned almost overnight. And Federal Reserve Chairman Alan Greenspan established what would become known as the Fed Put: the expectation that the central bank would step in during market crises. His single sentence the next morning — the Fed stands ready — broke the panic and saved the system." },
+  { section: 'lessons', text: "Black Monday remains the worst single day in stock market history by percentage. Not nineteen twenty-nine. Not two thousand eight. Not twenty-twenty. It taught Wall Street a lesson that keeps being forgotten and relearned: markets are not machines. They are ecosystems of human fear and automated amplification. And when the exits are crowded, not everyone gets out. This has been a special report." }
+];
+
+// Map sections to DOM elements
+function getNarrationSections() {
+  const sections = document.querySelectorAll('.section');
+  return [
+    { el: document.querySelector('.hero'), script: narrationScripts[0] },
+    { el: sections[0], script: narrationScripts[1] },
+    { el: sections[1], script: narrationScripts[2] },
+    { el: sections[2], script: narrationScripts[3] },
+    { el: sections[3], script: narrationScripts[4] },
+    { el: sections[4], script: narrationScripts[5] }
+  ];
+}
+
+class NarrationController {
+  constructor() {
+    this.active = false;
+    this.currentIdx = -1;
+    this.synth = window.speechSynthesis;
+    this.voice = null;
+    this.fab = document.getElementById('narrationFab');
+    this.btn = document.getElementById('narrationBtn');
+    this.banner = document.getElementById('narrationBanner');
+    this.bannerText = document.getElementById('narrationNowText');
+    this.sections = getNarrationSections();
+    this.scrollObserver = null;
+    this.btn.addEventListener('click', () => this.toggle());
+    this.loadVoice();
+  }
+
+  loadVoice() {
+    const pick = () => {
+      const voices = this.synth.getVoices();
+      // Prefer a deep male English voice for broadcast feel
+      const prefs = ['Daniel','Google UK English Male','Microsoft David','Alex','English United Kingdom'];
+      for (const p of prefs) {
+        const v = voices.find(v => v.name.includes(p) && v.lang.startsWith('en'));
+        if (v) { this.voice = v; return; }
+      }
+      this.voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+    };
+    pick();
+    if (this.synth.onvoiceschanged !== undefined) this.synth.onvoiceschanged = pick;
+  }
+
+  toggle() {
+    if (this.active) this.stop(); else this.start();
+  }
+
+  start() {
+    this.active = true;
+    this.btn.classList.add('active');
+    this.btn.innerHTML = '⏸';
+    this.banner.classList.add('visible');
+    // Find which section is currently in view
+    const scrollY = window.scrollY + window.innerHeight / 3;
+    let startIdx = 0;
+    for (let i = this.sections.length - 1; i >= 0; i--) {
+      if (this.sections[i].el && this.sections[i].el.offsetTop <= scrollY) { startIdx = i; break; }
+    }
+    this.speak(startIdx);
+    this.setupScrollWatch();
+  }
+
+  stop() {
+    this.active = false;
+    this.synth.cancel();
+    this.btn.classList.remove('active');
+    this.btn.innerHTML = '🔊';
+    this.banner.classList.remove('visible');
+    this.currentIdx = -1;
+    if (this.scrollObserver) { this.scrollObserver.disconnect(); this.scrollObserver = null; }
+  }
+
+  speak(idx) {
+    if (!this.active || idx < 0 || idx >= this.sections.length) { if (idx >= this.sections.length) this.stop(); return; }
+    if (idx === this.currentIdx && this.synth.speaking) return;
+    this.synth.cancel();
+    this.currentIdx = idx;
+    const script = this.sections[idx].script;
+    const utter = new SpeechSynthesisUtterance(script.text);
+    if (this.voice) utter.voice = this.voice;
+    utter.rate = 0.92;
+    utter.pitch = 0.85;
+    // Show current narration text in banner
+    const label = ['OPENING','THE NUMBERS','THE BUILDUP','BLACK MONDAY','THE AFTERMATH','LESSONS'][idx] || '';
+    this.bannerText.textContent = `▶ ${label}: ${script.text.substring(0, 80)}…`;
+    utter.onend = () => { if (this.active && idx === this.currentIdx) { /* wait for scroll to trigger next */ } };
+    this.synth.speak(utter);
+  }
+
+  setupScrollWatch() {
+    if (this.scrollObserver) this.scrollObserver.disconnect();
+    this.scrollObserver = new IntersectionObserver(entries => {
+      if (!this.active) return;
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const idx = this.sections.findIndex(s => s.el === e.target);
+          if (idx >= 0 && idx !== this.currentIdx) this.speak(idx);
+        }
+      });
+    }, { threshold: 0.35 });
+    this.sections.forEach(s => { if (s.el) this.scrollObserver.observe(s.el); });
+  }
+}
+
+// Chrome bug: speechSynthesis pauses after ~15s. Keep-alive workaround.
+setInterval(() => { if (window.speechSynthesis.speaking) window.speechSynthesis.resume(); }, 10000);
+
+let narrationCtrl;
+document.addEventListener('DOMContentLoaded', () => { narrationCtrl = new NarrationController(); });
 
 // Scroll reveal for timeline
 const observer=new IntersectionObserver(entries=>{
