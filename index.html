@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrashCourse '87 — The Day the Market Broke</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--border:#1e1e2e;--text:#e0e0e8;--muted:#8888a0;--accent:#ff4444;--green:#00cc88;--gold:#ffaa00;--blue:#4488ff}
+body{font-family:'Georgia','Times New Roman',serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--blue);text-decoration:none}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at center,rgba(255,68,68,0.08) 0%,transparent 70%)}
+.hero h1{font-size:clamp(2.5rem,7vw,5rem);font-weight:400;letter-spacing:-0.02em;margin-bottom:0.5rem}
+.hero h1 span{color:var(--accent);font-weight:700}
+.hero .subtitle{font-size:clamp(1rem,2.5vw,1.4rem);color:var(--muted);max-width:600px;margin:0.5rem auto 2rem}
+.hero .date-badge{display:inline-block;padding:0.5rem 1.5rem;border:1px solid var(--accent);color:var(--accent);font-family:'Courier New',monospace;font-size:1.1rem;letter-spacing:0.1em;margin-bottom:2rem}
+.scroll-hint{position:absolute;bottom:2rem;color:var(--muted);font-size:0.9rem;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+
+/* Ticker tape */
+.ticker-wrap{background:var(--surface);border-bottom:1px solid var(--border);padding:0.6rem 0;overflow:hidden;position:sticky;top:0;z-index:100}
+.ticker{display:flex;gap:2rem;animation:scroll 30s linear infinite;white-space:nowrap;font-family:'Courier New',monospace;font-size:0.85rem}
+.ticker span.down{color:var(--accent)}
+.ticker span.up{color:var(--green)}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* Sections */
+.section{max-width:900px;margin:0 auto;padding:4rem 2rem}
+.section h2{font-size:clamp(1.6rem,4vw,2.4rem);margin-bottom:1.5rem;font-weight:400}
+.section h2 span{color:var(--accent)}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin:2rem 0}
+.stat{background:var(--surface);border:1px solid var(--border);padding:1.5rem;text-align:center;border-radius:4px}
+.stat .number{font-size:2.2rem;font-weight:700;color:var(--accent);font-family:'Courier New',monospace}
+.stat .label{color:var(--muted);font-size:0.85rem;margin-top:0.3rem}
+
+/* Timeline */
+.timeline{position:relative;margin:3rem 0;padding-left:2rem;border-left:2px solid var(--border)}
+.timeline-event{margin-bottom:2.5rem;position:relative;opacity:0;transform:translateY(20px);transition:all 0.6s ease}
+.timeline-event.visible{opacity:1;transform:translateY(0)}
+.timeline-event::before{content:'';position:absolute;left:-2.55rem;top:0.4rem;width:12px;height:12px;background:var(--accent);border-radius:50%;border:2px solid var(--bg)}
+.timeline-event .time{font-family:'Courier New',monospace;color:var(--accent);font-size:0.9rem;margin-bottom:0.3rem}
+.timeline-event .content{background:var(--surface);border:1px solid var(--border);padding:1.2rem 1.5rem;border-radius:4px}
+.timeline-event .content h3{font-size:1.1rem;margin-bottom:0.5rem;font-weight:600}
+.timeline-event .content p{color:var(--muted);font-size:0.95rem}
+
+/* Chart */
+.chart-container{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem;margin:2rem 0}
+.chart-title{font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:1rem}
+canvas{width:100%!important;height:300px!important}
+
+/* Aftermath */
+.aftermath-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin:2rem 0}
+.aftermath-card{background:var(--surface);border:1px solid var(--border);padding:1.5rem;border-radius:4px}
+.aftermath-card h3{font-size:1rem;margin-bottom:0.5rem;color:var(--gold)}
+.aftermath-card p{color:var(--muted);font-size:0.9rem}
+
+/* Quotes */
+.quote{border-left:3px solid var(--gold);padding:1.5rem 2rem;margin:2rem 0;background:rgba(255,170,0,0.03)}
+.quote p{font-style:italic;font-size:1.1rem}
+.quote .attribution{color:var(--muted);font-size:0.85rem;margin-top:0.5rem}
+
+/* Footer */
+footer{text-align:center;padding:3rem 2rem;color:var(--muted);font-size:0.85rem;border-top:1px solid var(--border)}
+
+/* Interactive chart area */
+.dow-chart{position:relative;width:100%;height:320px;background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin:2rem 0}
+.dow-chart svg{width:100%;height:100%}
+.dow-chart .tooltip{position:absolute;background:rgba(10,10,15,0.95);border:1px solid var(--accent);padding:0.5rem 0.8rem;font-family:'Courier New',monospace;font-size:0.8rem;pointer-events:none;display:none;border-radius:3px;z-index:10}
+
+/* Responsive */
+@media(max-width:768px){
+  .timeline{padding-left:1.5rem}
+  .timeline-event::before{left:-2.05rem}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="date-badge">OCTOBER 19, 1987</div>
+  <h1>CrashCourse <span>'87</span></h1>
+  <p class="subtitle">The interactive story of Black Monday — the worst single-day percentage decline in stock market history</p>
+  <div class="scroll-hint">↓ Scroll to begin</div>
+</div>
+
+<div class="ticker-wrap">
+  <div class="ticker" id="ticker"></div>
+</div>
+
+<div class="section">
+  <h2>The <span>Numbers</span></h2>
+  <div class="stats-bar">
+    <div class="stat"><div class="number">-22.6%</div><div class="label">DJIA Single-Day Drop</div></div>
+    <div class="stat"><div class="number">-508</div><div class="label">Points Lost</div></div>
+    <div class="stat"><div class="number">$500B</div><div class="label">Market Value Erased</div></div>
+    <div class="stat"><div class="number">604M</div><div class="label">Shares Traded (NYSE)</div></div>
+  </div>
+  <p style="color:var(--muted);margin-top:1rem">To put this in perspective: The 2008 financial crisis never saw a single day worse than -7.9%. Black Monday was nearly three times that — in a single session.</p>
+</div>
+
+<div class="section">
+  <h2>The <span>Buildup</span></h2>
+  <div class="quote">
+    <p>"The market had risen 44% since January. Everyone was a genius."</p>
+    <div class="attribution">— Market historian</div>
+  </div>
+  <p>The summer of 1987 was euphoric. The Dow peaked at 2,722 on August 25th. The bull run had lasted five years. Portfolio insurance — a hedging strategy using futures — had become wildly popular, with over $60 billion in assets "protected." Nobody asked what would happen if everyone tried to sell at once.</p>
+  <br>
+  <p>Then came October. On Wednesday the 14th, the trade deficit report came in worse than expected. The market fell 95 points. Thursday: down another 58. Friday the 16th: the Dow dropped 108 points — 4.6% — on record volume. The weekend was filled with dread.</p>
+</div>
+
+<div class="section">
+  <h2>Black Monday — <span>Tick by Tick</span></h2>
+  
+  <div class="dow-chart" id="dowChart">
+    <svg id="chartSvg" viewBox="0 0 800 300" preserveAspectRatio="none"></svg>
+    <div class="tooltip" id="chartTooltip"></div>
+  </div>
+  
+  <div class="timeline" id="timeline">
+    <div class="timeline-event">
+      <div class="time">Pre-Market — 6:00 AM ET</div>
+      <div class="content">
+        <h3>Overseas Markets in Freefall</h3>
+        <p>Hong Kong had crashed 11%. London was down 10% and still falling. S&P 500 futures were limit-down before New York even opened. Portfolio managers arrived at their desks to find the world already burning.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">9:30 AM — Market Open</div>
+      <div class="content">
+        <h3>The Opening Bell Nobody Wanted</h3>
+        <p>Many NYSE stocks couldn't open — no buyers. The Dow gapped down immediately. $500 million in sell orders hit the S&P futures pit in the first minutes. Market makers began stepping back.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">10:00 AM — Down 100 points</div>
+      <div class="content">
+        <h3>Portfolio Insurance Kicks In</h3>
+        <p>The automated selling programs activated en masse. As prices fell, portfolio insurance models demanded more selling — which pushed prices lower — which triggered more selling. The doom loop had begun.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">11:00 AM — Down 200 points</div>
+      <div class="content">
+        <h3>"There Are No Buyers"</h3>
+        <p>NYSE specialists were overwhelmed. Many couldn't maintain orderly markets. The ticker was running 75 minutes late — traders had no idea where stocks actually stood. The futures market was pricing in total collapse.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">12:30 PM — Brief Rally</div>
+      <div class="content">
+        <h3>A False Hope</h3>
+        <p>The Dow recovered about 100 points as some bargain hunters stepped in. For 20 minutes, it looked like the worst might be over. It wasn't.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">1:30 PM — The Abyss</div>
+      <div class="content">
+        <h3>Selling Accelerates</h3>
+        <p>The brief rally was crushed. Portfolio insurance programs resumed selling with even more force. The Chicago Mercantile Exchange considered halting futures trading. The NYSE discussed closing entirely.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">2:00 PM — SEC Chairman Calls Reagan</div>
+      <div class="content">
+        <h3>Washington Watches in Horror</h3>
+        <p>SEC Chairman David Ruder mentioned possibly closing the exchanges. The comment leaked, intensifying panic. Treasury Secretary James Baker and Fed Chairman Alan Greenspan were in emergency consultations.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">3:00 PM — Down 400 points</div>
+      <div class="content">
+        <h3>Cascade Failure</h3>
+        <p>The selling was now indiscriminate. Blue chips, small caps, everything. Some stocks hadn't traded all day. The options market was in chaos. Margin calls were going unanswered.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">4:00 PM — The Closing Bell</div>
+      <div class="content">
+        <h3>Dow Closes at 1,738.74 — Down 508 Points</h3>
+        <p>The worst percentage decline in history: -22.6%. More than the 1929 crash. The ticker didn't finish printing until 5:17 PM. On trading floors across the world, people sat in stunned silence.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">Evening — After the Bell</div>
+      <div class="content">
+        <h3>The Night the System Nearly Died</h3>
+        <p>The real crisis was just beginning. Major brokerages faced insolvency. Banks refused to extend credit. The clearing system was breaking down. If margin calls weren't met by Tuesday morning, the entire financial system could seize.</p>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <div class="time">Tuesday 8:41 AM — Greenspan Acts</div>
+      <div class="content">
+        <h3>"The Fed Stands Ready"</h3>
+        <p>In a single sentence before markets opened, new Fed Chairman Alan Greenspan affirmed the Federal Reserve's "readiness to serve as a source of liquidity to support the economic and financial system." It worked. The panic broke. The Dow rose 102 points on Tuesday.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>The <span>Aftermath</span></h2>
+  <div class="aftermath-grid">
+    <div class="aftermath-card">
+      <h3>Circuit Breakers Born</h3>
+      <p>The NYSE implemented trading halts at 7%, 13%, and 20% declines. These "circuit breakers" were directly created because of Black Monday.</p>
+    </div>
+    <div class="aftermath-card">
+      <h3>Portfolio Insurance Died</h3>
+      <p>The strategy that amplified the crash was largely abandoned. Assets under portfolio insurance dropped from $60B to near zero within a year.</p>
+    </div>
+    <div class="aftermath-card">
+      <h3>The Fed's New Role</h3>
+      <p>Greenspan's swift response established the modern "Fed put" — the expectation that the central bank will intervene during market crises.</p>
+    </div>
+    <div class="aftermath-card">
+      <h3>Recovery</h3>
+      <p>The market recovered all losses within two years. By 1989, the Dow exceeded its August 1987 high. The economy never entered recession.</p>
+    </div>
+    <div class="aftermath-card">
+      <h3>Market Structure Reformed</h3>
+      <p>Electronic trading systems were accelerated. The NYSE moved toward automation. The specialist system was gradually phased out over the next two decades.</p>
+    </div>
+    <div class="aftermath-card">
+      <h3>Risk Models Rewritten</h3>
+      <p>The crash was a "25-standard-deviation event" — essentially impossible according to existing models. It forced a complete rethinking of tail risk and market correlation assumptions.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2><span>Lessons</span> That Echo</h2>
+  <div class="quote">
+    <p>"More money has been lost reaching for yield than at the point of a gun."</p>
+    <div class="attribution">— Raymond DeVoe Jr.</div>
+  </div>
+  <div class="quote">
+    <p>"In theory there is no difference between theory and practice. In practice there is."</p>
+    <div class="attribution">— Yogi Berra (often quoted on Wall Street after '87)</div>
+  </div>
+  <p style="margin-top:2rem">Black Monday taught Wall Street that markets are not machines — they are ecosystems of human fear and automated amplification. Every major crash since has echoed the same pattern: overconfidence, leverage, a trigger, then a feedback loop that overwhelms the exits.</p>
+  <br>
+  <p>The 1987 crash remains the single worst day in market history by percentage. Not 1929. Not 2008. Not 2020. One Monday in October, when the machines and the humans panicked together.</p>
+</div>
+
+<footer>
+  <p>CrashCourse '87 — An interactive history of Black Monday</p>
+  <p style="margin-top:0.5rem">Data sourced from SEC reports, NYSE archives, and Federal Reserve records</p>
+</footer>
+
+<script>
+// Ticker tape
+const tickerData = [
+  {sym:'DJIA',val:'-508.00',pct:'-22.61%',down:true},
+  {sym:'S&P 500',val:'-57.86',pct:'-20.47%',down:true},
+  {sym:'NASDAQ',val:'-46.12',pct:'-11.35%',down:true},
+  {sym:'IBM',val:'-8.00',pct:'-6.3%',down:true},
+  {sym:'GE',val:'-5.25',pct:'-10.8%',down:true},
+  {sym:'EXXON',val:'-4.50',pct:'-12.1%',down:true},
+  {sym:'GM',val:'-8.75',pct:'-14.2%',down:true},
+  {sym:'AT&T',val:'-3.125',pct:'-11.7%',down:true},
+  {sym:'MERCK',val:'-21.50',pct:'-13.0%',down:true},
+  {sym:'DIS',val:'-8.375',pct:'-13.5%',down:true},
+  {sym:'GOLD',val:'+$7.90',pct:'+1.7%',down:false},
+  {sym:'T-BOND',val:'+2.5pts',pct:'Flight to safety',down:false},
+  {sym:'USD/JPY',val:'-3.2%',pct:'Dollar crashes',down:true},
+  {sym:'FTSE',val:'-249.6',pct:'-10.8%',down:true},
+  {sym:'HSI',val:'-420.8',pct:'-11.1%',down:true}
+];
+const tickerEl=document.getElementById('ticker');
+let html='';
+for(let r=0;r<3;r++){tickerData.forEach(t=>{
+  const cls=t.down?'down':'up';
+  html+=`<span class="${cls}">${t.sym} ${t.val} (${t.pct})</span>`;
+})}
+tickerEl.innerHTML=html;
+
+// Intraday chart - approximate DJIA levels on Oct 19, 1987
+const intradayData=[
+  {t:'9:30',v:2164},{t:'9:45',v:2130},{t:'10:00',v:2100},{t:'10:15',v:2070},
+  {t:'10:30',v:2040},{t:'10:45',v:2020},{t:'11:00',v:2000},{t:'11:15',v:1980},
+  {t:'11:30',v:1960},{t:'11:45',v:1950},{t:'12:00',v:1940},{t:'12:15',v:1960},
+  {t:'12:30',v:1990},{t:'12:45',v:2010},{t:'1:00',v:1990},{t:'1:15',v:1960},
+  {t:'1:30',v:1930},{t:'1:45',v:1900},{t:'2:00',v:1870},{t:'2:15',v:1850},
+  {t:'2:30',v:1830},{t:'2:45',v:1810},{t:'3:00',v:1790},{t:'3:15',v:1770},
+  {t:'3:30',v:1760},{t:'3:45',v:1750},{t:'4:00',v:1739}
+];
+
+const svg=document.getElementById('chartSvg');
+const tooltip=document.getElementById('chartTooltip');
+const W=800,H=300,pad={t:30,r:20,b:40,l:60};
+const minV=1700,maxV=2200;
+const xScale=i=>pad.l+i/(intradayData.length-1)*(W-pad.l-pad.r);
+const yScale=v=>pad.t+(1-(v-minV)/(maxV-minV))*(H-pad.t-pad.b);
+
+// Grid lines
+for(let v=1800;v<=2200;v+=100){
+  const y=yScale(v);
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  Object.entries({x1:pad.l,x2:W-pad.r,y1:y,y2:y,stroke:'#1e1e2e','stroke-width':1}).forEach(([k,val])=>line.setAttribute(k,val));
+  svg.appendChild(line);
+  const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+  txt.setAttribute('x',pad.l-8);txt.setAttribute('y',y+4);txt.setAttribute('fill','#8888a0');txt.setAttribute('font-size','11');txt.setAttribute('text-anchor','end');txt.setAttribute('font-family','Courier New');
+  txt.textContent=v.toLocaleString();svg.appendChild(txt);
+}
+
+// Opening level line
+const openY=yScale(2164);
+const openLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+Object.entries({x1:pad.l,x2:W-pad.r,y1:openY,y2:openY,stroke:'#ffaa00','stroke-width':1,'stroke-dasharray':'4,4',opacity:0.5}).forEach(([k,v])=>openLine.setAttribute(k,v));
+svg.appendChild(openLine);
+
+// Area + line
+let pathD='';let areaD=`M${xScale(0)},${yScale(intradayData[0].v)}`;
+intradayData.forEach((d,i)=>{
+  const x=xScale(i),y=yScale(d.v);
+  if(i===0){pathD=`M${x},${y}`;areaD=`M${x},${y}`}
+  else{pathD+=` L${x},${y}`;areaD+=` L${x},${y}`}
+});
+areaD+=` L${xScale(intradayData.length-1)},${H-pad.b} L${xScale(0)},${H-pad.b} Z`;
+
+const area=document.createElementNS('http://www.w3.org/2000/svg','path');
+area.setAttribute('d',areaD);area.setAttribute('fill','url(#redGrad)');
+const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+const grad=document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+grad.setAttribute('id','redGrad');grad.setAttribute('x1','0');grad.setAttribute('y1','0');grad.setAttribute('x2','0');grad.setAttribute('y2','1');
+const s1=document.createElementNS('http://www.w3.org/2000/svg','stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color','#ff4444');s1.setAttribute('stop-opacity','0.3');
+const s2=document.createElementNS('http://www.w3.org/2000/svg','stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color','#ff4444');s2.setAttribute('stop-opacity','0.02');
+grad.appendChild(s1);grad.appendChild(s2);defs.appendChild(grad);svg.appendChild(defs);
+svg.appendChild(area);
+
+const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+path.setAttribute('d',pathD);path.setAttribute('fill','none');path.setAttribute('stroke','#ff4444');path.setAttribute('stroke-width','2.5');
+svg.appendChild(path);
+
+// Time labels
+['9:30','11:00','12:30','2:00','4:00'].forEach(t=>{
+  const idx=intradayData.findIndex(d=>d.t===t);
+  if(idx>=0){
+    const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x',xScale(idx));txt.setAttribute('y',H-pad.b+20);txt.setAttribute('fill','#8888a0');txt.setAttribute('font-size','11');txt.setAttribute('text-anchor','middle');txt.setAttribute('font-family','Courier New');
+    txt.textContent=t;svg.appendChild(txt);
+  }
+});
+
+// Interactive dots
+const chartEl=document.getElementById('dowChart');
+intradayData.forEach((d,i)=>{
+  const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx',xScale(i));circle.setAttribute('cy',yScale(d.v));circle.setAttribute('r','12');circle.setAttribute('fill','transparent');circle.setAttribute('cursor','pointer');
+  circle.addEventListener('mouseenter',e=>{
+    const drop=((d.v-2246)/2246*100).toFixed(1);
+    tooltip.style.display='block';
+    tooltip.innerHTML=`<strong>${d.t}</strong><br>DJIA: ${d.v.toLocaleString()}<br>Day: ${drop}%`;
+  });
+  circle.addEventListener('mousemove',e=>{
+    const rect=chartEl.getBoundingClientRect();
+    tooltip.style.left=(e.clientX-rect.left+12)+'px';
+    tooltip.style.top=(e.clientY-rect.top-40)+'px';
+  });
+  circle.addEventListener('mouseleave',()=>{tooltip.style.display='none'});
+  svg.appendChild(circle);
+});
+
+// Scroll reveal for timeline
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+},{threshold:0.2});
+document.querySelectorAll('.timeline-event').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>
